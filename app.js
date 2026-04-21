@@ -260,36 +260,57 @@ class EndNoteConverter {
     }
 
     /**
-     * 将数据转换为 YAML 格式
+     * 将数据转换为 YAML 格式（严格 YAML 规范）
+     * 所有字符串值一律加双引号，所有数组元素一律加双引号
      */
     toYAML(data) {
         const yaml = [];
         
-        for (const [key, value] of Object.entries(data)) {
-            if (value === null || value === undefined || value === '') {
-                // 空字符串或 null 保留空值
-                yaml.push(`${key}: ""`);
+        // 定义字段顺序
+        const fieldOrder = [
+            'type', 'title', 'authors', 'year', 'journal', 'doi',
+            'pdf_file', 'source_pdf_uri', 'extra_pdf_files',
+            'raw_keywords', 'concepts', 'check_status', 'source'
+        ];
+        
+        // 按定义的顺序输出字段
+        for (const key of fieldOrder) {
+            if (!(key in data)) continue;
+            
+            const value = data[key];
+            
+            if (value === null || value === undefined) {
+                // 不输出 null 或 undefined
+                continue;
             } else if (Array.isArray(value)) {
                 if (value.length === 0) {
                     yaml.push(`${key}: []`);
                 } else {
                     yaml.push(`${key}:`);
                     value.forEach(item => {
-                        // 如果项目包含特殊字符，用引号包裹
-                        const needsQuotes = /[:\[\]{}#&*!|>'"%@`]/.test(item);
-                        yaml.push(`  - ${needsQuotes ? `"${item.replace(/"/g, '\\"')}"` : item}`);
+                        // 所有数组元素一律加双引号
+                        const escapedItem = String(item).replace(/"/g, '\\"');
+                        yaml.push(`  - "${escapedItem}"`);
                     });
                 }
             } else if (typeof value === 'string') {
-                // 字符串需要处理特殊字符
-                const needsQuotes = /[:\[\]{}#&*!|>'"%@`\n]/.test(value);
-                if (needsQuotes) {
-                    yaml.push(`${key}: "${value.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`);
-                } else {
-                    yaml.push(`${key}: ${value}`);
-                }
-            } else {
+                // 所有字符串值一律加双引号
+                const escapedValue = value
+                    .replace(/\\/g, '\\\\') // 先转义反斜杠
+                    .replace(/"/g, '\\"')   // 再转义双引号
+                    .replace(/\n/g, '\\n') // 换行符用 \n 表示
+                    .replace(/\r/g, '\\r'); // 回车符用 \r 表示
+                yaml.push(`${key}: "${escapedValue}"`);
+            } else if (typeof value === 'number') {
+                // 数字直接输出（不加引号）
                 yaml.push(`${key}: ${value}`);
+            } else {
+                // 其他类型转字符串后加引号
+                const escapedValue = String(value)
+                    .replace(/\\/g, '\\\\')
+                    .replace(/"/g, '\\"')
+                    .replace(/\n/g, '\\n');
+                yaml.push(`${key}: "${escapedValue}"`);
             }
         }
         
@@ -297,7 +318,7 @@ class EndNoteConverter {
     }
 
     /**
-     * 生成 Markdown 文件内容
+     * 生成 Markdown 文件内容（改进版本，适合 Obsidian paper note）
      */
     generateMarkdown(record, filename) {
         const title = this.getTitle(record);
@@ -317,7 +338,7 @@ class EndNoteConverter {
             type: 'paper',
             title: title,
             authors: authors,
-            year: year || '',
+            year: year ? parseInt(year) || year : '',
             journal: journal,
             doi: doi,
             pdf_file: pdfFile,
@@ -331,13 +352,16 @@ class EndNoteConverter {
 
         const frontmatter = this.toYAML(frontmatterData);
 
-        // Markdown 正文
+        // 改善 notes 的排版
+        const formattedNotes = this.formatNotes(notes);
+
+        // 正文：使用 ## 标题，固定 8 个章节
         const sections = [
             '## Abstract',
             abstract || '',
             '',
             '## Notes',
-            notes || '',
+            formattedNotes || '',
             '',
             '## AI Summary',
             '',
@@ -355,12 +379,35 @@ class EndNoteConverter {
             '',
             '',
             '## My Notes',
-            '',
+            ''
         ];
 
         const markdown = `---\n${frontmatter}\n---\n\n${sections.join('\n')}`;
         
         return markdown;
+    }
+
+    /**
+     * 改善 Notes 的排版
+     * 处理换行符、多余空白，让其保持可读性
+     */
+    formatNotes(notes) {
+        if (!notes) return '';
+        
+        // 移除开头和结尾的空白
+        let formatted = notes.trim();
+        
+        // 保留原有的换行（可能是 \n 或文字中的换行符）
+        // 规范化为单一换行符
+        formatted = formatted
+            .replace(/\r\n/g, '\n')  // Windows 换行
+            .replace(/\r/g, '\n')    // Mac 换行
+            .replace(/\n\n+/g, '\n'); // 多个连续换行合并为单个
+        
+        // 如果内容很长且没有换行，考虑保持原样（避免强制换行破坏结构）
+        // 但如果有明显的段落分隔符，保留它们
+        
+        return formatted;
     }
 
     /**
