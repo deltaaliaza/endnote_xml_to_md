@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EndNote XML → Obsidian Markdown 轉換工具</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>📚 EndNote XML → Obsidian Markdown 轉換工具</h1>
+                <p class="subtitle">將 EndNote 文獻庫轉換為 Obsidian 可用的 Markdown 檔案</p>
+                <div class="info-banner">
+                    <strong>🔒 本機安全處理：</strong> 所有檔案在您的瀏覽器中本地解析，<strong>資料不會上傳到任何伺服器</strong>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="section upload-section">
+                <h2>第 1 步：上傳 EndNote XML 檔案</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <p class="upload-text">點選此區域或拖曳檔案來上傳</p>
+                    <p class="upload-subtext">支援 EndNote 匯出的 .xml 檔案</p>
+                    <input type="file" id="xmlFile" accept=".xml" style="display: none;">
+                </div>
+                <div id="fileInfo" class="file-info" style="display: none;">
+                    <p>已選擇檔案：<strong id="fileName"></strong></p>
+                </div>
+            </section>
+
+            <!-- Statistics Section -->
+            <section class="section statistics-section" id="statisticsSection" style="display: none;">
+                <h2>轉換統計</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalRecords">0</div>
+                        <div class="stat-label">總記錄數</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="successCount">0</div>
+                        <div class="stat-label">成功轉換</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="noDOICount">0</div>
+                        <div class="stat-label">缺少 DOI</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="noPDFCount">0</div>
+                        <div class="stat-label">缺少 PDF</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="conflictCount">0</div>
+                        <div class="stat-label">檔名衝突</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="multiPDFCount">0</div>
+                        <div class="stat-label">多個 PDF</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Preview Section -->
+            <section class="section preview-section" id="previewSection" style="display: none;">
+                <h2>第 2 步：預覽轉換結果</h2>
+                <div class="table-wrapper">
+                    <table class="preview-table" id="previewTable">
+                        <thead>
+                            <tr>
+                                <th>檔名</th>
+                                <th>標題</th>
+                                <th>年份</th>
+                                <th>DOI</th>
+                                <th>PDF 檔名</th>
+                                <th>Keywords 數</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Warnings Section -->
+            <section class="section warnings-section" id="warningsSection" style="display: none;">
+                <h2>⚠️ 警告與提示</h2>
+                <div id="warningsContainer"></div>
+            </section>
+
+            <!-- Download Section -->
+            <section class="section download-section" id="downloadSection" style="display: none;">
+                <h2>第 3 步：下載轉換結果</h2>
+                <div class="download-buttons">
+                    <button id="downloadZipBtn" class="btn btn-primary">
+                        📦 下載全部 Markdown 檔案 (ZIP)
+                    </button>
+                    <button id="downloadReportBtn" class="btn btn-secondary">
+                        📋 下載轉換報告 (JSON)
+                    </button>
+                </div>
+                <p class="download-info">
+                    ZIP 檔案包含所有轉換後的 .md 檔案，可直接解壓到 Obsidian Vault 使用。
+                </p>
+            </section>
+
+            <!-- Sample Output Section -->
+            <section class="section sample-section" id="sampleSection" style="display: none;">
+                <h2>範例輸出</h2>
+                <details class="sample-detail">
+                    <summary>查看第一筆記錄的 Markdown 輸出</summary>
+                    <pre id="sampleOutput" class="sample-code"></pre>
+                </details>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>EndNote XML → Obsidian Markdown Converter v1.0</p>
+            <p>開源工具 | 本機處理 | <a href="https://github.com" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>正在處理 XML 檔案...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

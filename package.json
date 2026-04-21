@@ -1,0 +1,48 @@
+{
+  "name": "endnote-to-obsidian-converter",
+  "version": "1.0.0",
+  "description": "A pure frontend tool to convert EndNote XML exports to Obsidian-compatible Markdown files",
+  "main": "app.js",
+  "scripts": {
+    "serve": "python -m http.server 8000",
+    "serve:node": "http-server",
+    "test": "echo \"See TEST.md for testing instructions\"",
+    "build:minify": "echo \"Optional: Use UglifyJS or Terser to minify JS and CSS\""
+  },
+  "keywords": [
+    "endnote",
+    "obsidian",
+    "markdown",
+    "xml",
+    "converter",
+    "citation",
+    "knowledge-management"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/endnote-to-obsidian.git"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.0"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "browserslist": [
+    "Chrome >= 90",
+    "Firefox >= 88",
+    "Safari >= 14",
+    "Edge >= 90"
+  ],
+  "features": {
+    "xmlParsing": "Native DOMParser",
+    "zipGeneration": "JSZip (CDN)",
+    "fileDownload": "FileSaver (CDN)",
+    "encoding": "UTF-8",
+    "responsive": true,
+    "offlineCapable": true,
+    "noBackendRequired": true
+  }
+}
