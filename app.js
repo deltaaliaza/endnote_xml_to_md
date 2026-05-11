@@ -327,7 +327,23 @@ class EndNoteConverter {
     }
 
     /**
-     * 生成 Markdown 文件内容（结构化版本，支持 Obsidian 文献矩阵）
+     * 將字串轉為較適合 Obsidian 顯示的文字。
+     * 注意：此函式只做清理，不會自動建立 wiki link。
+     */
+    normalizeDisplayText(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    /**
+     * 生成 Markdown 文件内容（Obsidian 友善版本）
+     * 設計原則：
+     * 1. YAML frontmatter 放穩定 metadata，便於 Obsidian Properties / Bases / Dataview 使用。
+     * 2. 正文保留 EndNote notes、abstract、keywords，讓後續 AI 分析有依據。
+     * 3. 不預設產生 [[Concept Name]] 這類假 wiki link，避免污染 Obsidian Graph。
+     * 4. EndNote keywords 先作為「候選概念」，由使用者或 AI 審查後再轉成 [[真正概念]]。
      */
     generateMarkdown(record, filename) {
         const title = this.getTitle(record);
@@ -335,12 +351,14 @@ class EndNoteConverter {
         const year = this.getYear(record);
         const journal = this.getJournal(record);
         const doi = this.getDOI(record);
+        const abstract = this.getAbstract(record);
+        const notes = this.getNotes(record);
         const pdfUrls = this.getPDFUrls(record);
         const pdfFile = pdfUrls.length > 0 ? this.extractPDFFilename(pdfUrls[0]) : '';
         const extraPDFs = pdfUrls.slice(1);
         const keywords = this.getKeywords(record);
 
-        // YAML frontmatter
+        // YAML frontmatter：保留穩定、可被 Obsidian Properties / Bases / Dataview 使用的欄位
         const frontmatterData = {
             type: 'paper',
             title: title,
@@ -359,191 +377,136 @@ class EndNoteConverter {
 
         const frontmatter = this.toYAML(frontmatterData);
 
-        // 正文：结构化模板格式，支持文献矩阵和研究缺口分析
-/**
- * 將字串轉為較適合 Obsidian 顯示的標題文字
- * 不負責建立 wiki link，只做基本清理
- */
-normalizeDisplayText(text) {
-    if (!text) return '';
-    return String(text)
-        .replace(/\s+/g, ' ')
-        .trim();
-}
+        const safeTitle = this.normalizeDisplayText(title);
+        const authorLine = authors.length > 0
+            ? authors.map(author => this.normalizeDisplayText(author)).join('; ')
+            : '';
 
-/**
- * 生成 Markdown 文件內容
- * 設計原則：
- * 1. YAML frontmatter 只放穩定 metadata
- * 2. 正文才放文獻分析欄位
- * 3. 不預設產生假的 [[Concept Name]] 連結，避免污染 Obsidian Graph
- * 4. EndNote keywords 作為候選概念，但先不自動轉成 [[ ]]
- */
-generateMarkdown(record, filename) {
-    const title = this.getTitle(record);
-    const authors = this.getAllAuthors(record);
-    const year = this.getYear(record);
-    const journal = this.getJournal(record);
-    const doi = this.getDOI(record);
-    const abstract = this.getAbstract(record);
-    const notes = this.getNotes(record);
-    const pdfUrls = this.getPDFUrls(record);
-    const pdfFile = pdfUrls.length > 0 ? this.extractPDFFilename(pdfUrls[0]) : '';
-    const extraPDFs = pdfUrls.slice(1);
-    const keywords = this.getKeywords(record);
+        const keywordLines = keywords.length > 0
+            ? keywords.map(keyword => `- ${this.normalizeDisplayText(keyword)}`)
+            : ['- '];
 
-    // YAML frontmatter：保留穩定、可被 Obsidian Properties / Bases / Dataview 使用的欄位
-    const frontmatterData = {
-        type: 'paper',
-        title: title,
-        authors: authors,
-        year: year ? parseInt(year) || year : '',
-        journal: journal,
-        doi: doi,
-        pdf_file: pdfFile,
-        source_pdf_uri: pdfUrls.length > 0 ? pdfUrls[0] : '',
-        extra_pdf_files: extraPDFs,
-        raw_keywords: keywords,
-        concepts: [],
-        check_status: 'needs-review',
-        source: 'EndNote XML'
-    };
-
-    const frontmatter = this.toYAML(frontmatterData);
-
-    const keywordLines = keywords.length > 0
-        ? keywords.map(keyword => `- ${this.normalizeDisplayText(keyword)}`)
-        : ['- '];
-
-    const authorLine = authors.length > 0
-        ? authors.join('; ')
-        : '';
-
-    const sections = [
-        `# ${title}`,
-        '',
-        '## Paper Identity',
-        '',
-        `- Title: ${title}`,
-        `- Authors: ${authorLine}`,
-        `- Year: ${year || ''}`,
-        `- Journal: ${journal || ''}`,
-        `- DOI: ${doi || ''}`,
-        `- PDF: ${pdfFile || ''}`,
-        '',
-        '## My Notes',
-        '',
-        notes ? notes : '',
-        '',
-        '## Abstract from EndNote',
-        '',
-        abstract ? abstract : '',
-        '',
-        '## AI Summary',
-        '',
-        '',
-        '## Research Question',
-        '',
-        '### Main RQ',
-        '- ',
-        '',
-        '### Sub-questions',
-        '- ',
-        '',
-        '## Method',
-        '',
-        '### Research Design',
-        '- ',
-        '',
-        '### Sample/Data',
-        '- ',
-        '',
-        '### Analysis Approach',
-        '- ',
-        '',
-        '## Key Findings',
-        '',
-        '### Finding 1',
-        '- ',
-        '',
-        '### Finding 2',
-        '- ',
-        '',
-        '### Finding 3',
-        '- ',
-        '',
-        '## Limitations',
-        '',
-        '### Methodological',
-        '- ',
-        '',
-        '### Contextual',
-        '- ',
-        '',
-        '## Concept Candidates from EndNote Keywords',
-        '',
-        ...keywordLines,
-        '',
-        '> Review these terms before converting them into Obsidian links.',
-        '',
-        '## Concepts',
-        '',
-        '### Core Concepts',
-        '- ',
-        '',
-        '### Related Theory',
-        '- ',
-        '',
-        '### Key Terms',
-        '- ',
-        '',
-        '## Issues',
-        '',
-        '### Tensions/Contradictions',
-        '- ',
-        '',
-        '### Unresolved Questions',
-        '- ',
-        '',
-        '### Methodological Concerns',
-        '- ',
-        '',
-        '## Gaps',
-        '',
-        '### Knowledge Gaps',
-        '- ',
-        '',
-        '### Empirical Gaps',
-        '- ',
-        '',
-        '### Theoretical Gaps',
-        '- ',
-        '',
-        '## Cross-References',
-        '',
-        '### Related Papers',
-        '- ',
-        '',
-        '### Future Research Directions',
-        '- ',
-        '',
-        '## Obsidian Link Suggestions',
-        '',
-        '<!--',
-        'After reviewing the paper, convert only stable and reusable concepts into links.',
-        'Examples:',
-        '- [[Digital Competence]]',
-        '- [[Dynamic Capabilities]]',
-        '- [[Internationalization]]',
-        '',
-        'Avoid keeping placeholder links such as [[Concept Name]] or [[Gap Topic]].',
-        '-->'
-    ];
-
-    const markdown = `---\n${frontmatter}\n---\n\n${sections.join('\n')}`;
-
-    return markdown;
-}
+        // 正文：文獻筆記模板。刻意不放 placeholder wiki links。
+        const sections = [
+            `# ${safeTitle}`,
+            '',
+            '## Paper Identity',
+            '',
+            `- Title: ${safeTitle}`,
+            `- Authors: ${authorLine}`,
+            `- Year: ${year || ''}`,
+            `- Journal: ${journal || ''}`,
+            `- DOI: ${doi || ''}`,
+            `- PDF: ${pdfFile || ''}`,
+            '',
+            '## My Notes',
+            '',
+            notes ? notes : '',
+            '',
+            '## Abstract from EndNote',
+            '',
+            abstract ? abstract : '',
+            '',
+            '## AI Summary',
+            '',
+            '',
+            '## Research Question',
+            '',
+            '### Main RQ',
+            '- ',
+            '',
+            '### Sub-questions',
+            '- ',
+            '',
+            '## Method',
+            '',
+            '### Research Design',
+            '- ',
+            '',
+            '### Sample/Data',
+            '- ',
+            '',
+            '### Analysis Approach',
+            '- ',
+            '',
+            '## Key Findings',
+            '',
+            '### Finding 1',
+            '- ',
+            '',
+            '### Finding 2',
+            '- ',
+            '',
+            '### Finding 3',
+            '- ',
+            '',
+            '## Limitations',
+            '',
+            '### Methodological',
+            '- ',
+            '',
+            '### Contextual',
+            '- ',
+            '',
+            '## Concept Candidates from EndNote Keywords',
+            '',
+            ...keywordLines,
+            '',
+            '> Review these terms before converting them into Obsidian links.',
+            '',
+            '## Concepts',
+            '',
+            '### Core Concepts',
+            '- ',
+            '',
+            '### Related Theory',
+            '- ',
+            '',
+            '### Key Terms',
+            '- ',
+            '',
+            '## Issues',
+            '',
+            '### Tensions/Contradictions',
+            '- ',
+            '',
+            '### Unresolved Questions',
+            '- ',
+            '',
+            '### Methodological Concerns',
+            '- ',
+            '',
+            '## Gaps',
+            '',
+            '### Knowledge Gaps',
+            '- ',
+            '',
+            '### Empirical Gaps',
+            '- ',
+            '',
+            '### Theoretical Gaps',
+            '- ',
+            '',
+            '## Cross-References',
+            '',
+            '### Related Papers',
+            '- ',
+            '',
+            '### Future Research Directions',
+            '- ',
+            '',
+            '## Obsidian Link Suggestions',
+            '',
+            '<!--',
+            'After reviewing the paper, convert only stable and reusable concepts into links.',
+            'Examples:',
+            '- [[Digital Competence]]',
+            '- [[Dynamic Capabilities]]',
+            '- [[Internationalization]]',
+            '',
+            'Avoid keeping placeholder links such as [[Concept Name]] or [[Gap Topic]].',
+            '-->'
+        ];
 
         const markdown = `---\n${frontmatter}\n---\n\n${sections.join('\n')}`;
         
