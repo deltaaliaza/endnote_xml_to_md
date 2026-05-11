@@ -138,39 +138,77 @@ source: "EndNote XML"
 ---
 ```
 
-### 2. Markdown 正文（固定模板）
+### 2. Markdown 正文（結構化分析框架）
 
 ```markdown
-My Notes
+## My Notes
+[個人筆記]
 
 ----
 
-AI Summary
+## AI Summary
+[論文摘要]
 
-Research Question
+## Research Question
+### Main RQ
+- [主要研究問題]
+### Sub-questions
+- [子問題]
 
-Method
+## Method
+### Research Design
+- [研究設計]
+### Sample/Data
+- [樣本資訊]
+### Analysis Approach
+- [分析方法]
 
-Key Findings
+## Key Findings
+### Finding 1
+- [發現描述]
 
-Limitations
+## Limitations
+### Methodological
+- [方法論局限]
 
-Concepts
+## Concepts
+### Core Concepts
+- [[Concept Name]]
 
-Issues
+## Issues
+### Tensions/Contradictions
+- [[Issue Topic]]
 
-Gaps
+## Gaps
+### Knowledge Gaps
+- [[Gap Topic]]
+
+## Cross-References
+### Related Papers
+- [[Related Paper]]
 ```
 
-**說明：**
-- `My Notes` - 用戶個人筆記
-- `----` - 清晰的分隔符
-- 其他段落預留空白，等待用戶填入 AI 萃取的內容
-- 每段之間有單一空行
+**特點：**
+- ✅ 結構化的子標題 (`###`) 便於內容組織
+- ✅ 用 `[[]]` 建立 Obsidian 內部連結
+- ✅ 支持**文獻矩陣**比較多篇論文
+- ✅ 支持**研究缺口分析**
+- ✅ 每個部分都有明確的用途
+
+### 3. 新結構各部分的用途
+
+| 部分 | 用途 | 文獻矩陣應用 |
+|------|------|-----------|
+| **Research Question** | 識別論文的研究焦點 | 比較不同論文的 RQ，找相似/相異之處 |
+| **Method** | 瞭解研究方法和樣本 | 比較方法論多樣性 |
+| **Key Findings** | 提取核心發現 | 比較發現的一致性或衝突 |
+| **Limitations** | 理解適用範圍 | 評估研究外推性 |
+| **Concepts** | 識別核心概念 | 建立概念網絡，用 `[[]]` 連結 |
+| **Issues** | 發現未解決的張力 | 識別領域內的爭議 |
+| **Gaps** | 找出知識空白 | **直接識別研究機會** ⭐ |
+| **Cross-References** | 追踪文獻關係 | 用 `[[]]` 建立論文網絡 |
 
 ---
-
-## 🎯 YAML Frontmatter 欄位說明
 
 | 欄位 | 說明 | 來源 |
 |------|------|------|
@@ -342,17 +380,60 @@ endnote-to-obsidian/
 
 ## 🔄 更新歷史
 
-### v1.0（當前版本）
+### v1.0.1（當前版本）
+- ✅ 結構化 Markdown 格式（支持文獻矩陣分析）
 - ✅ 完整 XML 解析
 - ✅ 智能檔名生成
 - ✅ YAML frontmatter（字段間有空行）
-- ✅ 固定模板輸出（My Notes + 8 個預留段落）
 - ✅ ZIP 匯出
-- ✅ 完整文檔
+- ✅ 6 個 AI Prompt 分析模板
+- ✅ 完整的 Obsidian 集成工作流文檔
 
 ---
 
-## 📞 支持
+## 📊 文獻矩陣與研究缺口工作流
+
+本工具現在支持在 Obsidian 中建立**文獻矩陣**，用於系統的文獻回顧和研究缺口識別。
+
+### 使用場景
+
+- 📋 **收集多篇相關論文** - 轉換 20+ 篇論文為 `.md`
+- 🔗 **建立概念網絡** - 用 `[[]]` 連結建立概念關聯
+- 📊 **比較研究方法** - 在 Method 部分快速對比
+- 🎯 **識別研究缺口** - 收集所有 Gaps 並優先級排序
+- 🔄 **跟踪概念演進** - 看哪些概念被多篇論文使用
+
+### 快速開始
+
+#### 步驟 1：生成 Markdown 檔案
+1. 上傳 EndNote XML
+2. 下載轉換後的 ZIP
+3. 所有 `.md` 都包含新的結構化格式
+
+#### 步驟 2：在 Obsidian 中整理
+1. 將所有 `.md` 檔導入 Obsidian Vault
+2. 創建 `Literature Matrix` 中心筆記
+3. 用 `[[]]` 連結到各篇論文
+
+#### 步驟 3：使用 AI 輔助分析
+使用 `AI_PROMPT_TEMPLATES.md` 中提供的 6 個 Prompt：
+- 分析研究缺口
+- 建立概念聯繫
+- 識別研究張力
+- 建立對比矩陣
+- 標記內部連結
+- 生成搜索查詢
+
+#### 步驟 4：建立矩陣
+建立對比表格，在 Concepts、Issues、Gaps 之間建立關聯
+
+### 配套資源
+
+- 📖 **AI_PROMPT_TEMPLATES.md** - 6 個 AI 分析提示模板
+- 📚 **OBSIDIAN_MATRIX_WORKFLOW.md** - 完整工作流指南
+- 📝 **SAMPLE_NEW_STRUCTURE.md** - 完整範例論文筆記
+
+---
 
 ### 文檔
 - **快速開始** - 見本檔案上方
