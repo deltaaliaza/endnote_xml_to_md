@@ -260,9 +260,8 @@ class EndNoteConverter {
     }
 
     /**
-     * 将数据转换为 YAML 格式（严格 YAML 规范，带空行增强可读性）
+     * 将数据转换为 YAML 格式（严格 YAML 规范，无空行，确保 Obsidian 正确解析）
      * 所有字符串值一律加双引号，所有数组元素一律加双引号
-     * 在每个字段之间添加空行以提高阅读清晰性
      */
     toYAML(data) {
         const yaml = [];
@@ -274,9 +273,8 @@ class EndNoteConverter {
             'raw_keywords', 'concepts', 'check_status', 'source'
         ];
         
-        // 按定义的顺序输出字段
-        for (let i = 0; i < fieldOrder.length; i++) {
-            const key = fieldOrder[i];
+        // 按定义的顺序输出字段（不添加空行）
+        for (const key of fieldOrder) {
             if (!(key in data)) continue;
             
             const value = data[key];
@@ -284,11 +282,6 @@ class EndNoteConverter {
             if (value === null || value === undefined) {
                 // 不输出 null 或 undefined
                 continue;
-            }
-            
-            // 在每个字段之前添加空行（除了第一个字段）
-            if (yaml.length > 0) {
-                yaml.push('');
             }
             
             if (Array.isArray(value)) {
@@ -328,6 +321,10 @@ class EndNoteConverter {
 
     /**
      * 生成 Markdown 文件内容（结构化版本，支持 Obsidian 文献矩阵）
+     * 
+     * 重要：[[]] 链接只在 Markdown 正文中才会被 Obsidian 图谱识别
+     * YAML frontmatter 中的 [[]] 不会被图谱识别，因此我们在正文中同时使用 [[]] 
+     * 以建立图谱关联
      */
     generateMarkdown(record, filename) {
         const title = this.getTitle(record);
@@ -340,7 +337,7 @@ class EndNoteConverter {
         const extraPDFs = pdfUrls.slice(1);
         const keywords = this.getKeywords(record);
 
-        // YAML frontmatter
+        // YAML frontmatter（用于 Obsidian Properties 和 Dataview 查询）
         const frontmatterData = {
             type: 'paper',
             title: title,
@@ -360,122 +357,100 @@ class EndNoteConverter {
         const frontmatter = this.toYAML(frontmatterData);
 
         // 正文：结构化模板格式，支持文献矩阵和研究缺口分析
-// 正文：Obsidian 友善模板
-// 最小修改版：不改 UI、不改下載、不改 XML 解析，只調整輸出的 Markdown 結構
-const sections = [
-    '## My Notes',
-    '',
-    '',
-    '## AI Summary',
-    '',
-    '',
-    '## Research Question',
-    '',
-    '### Main RQ',
-    '- ',
-    '',
-    '### Sub-questions',
-    '- ',
-    '',
-    '',
-    '## Method',
-    '',
-    '### Research Design',
-    '- ',
-    '',
-    '### Sample/Data',
-    '- ',
-    '',
-    '### Analysis Approach',
-    '- ',
-    '',
-    '',
-    '## Key Findings',
-    '',
-    '### Finding 1',
-    '- ',
-    '',
-    '### Finding 2',
-    '- ',
-    '',
-    '### Finding 3',
-    '- ',
-    '',
-    '',
-    '## Limitations',
-    '',
-    '### Methodological',
-    '- ',
-    '',
-    '### Contextual',
-    '- ',
-    '',
-    '',
-    '## Concept Candidates from EndNote Keywords',
-    '',
-    ...keywords.map(keyword => `- ${keyword}`),
-    ...(keywords.length === 0 ? ['- '] : []),
-    '',
-    '> Review these terms before converting them into Obsidian links.',
-    '',
-    '',
-    '## Concepts',
-    '',
-    '### Core Concepts',
-    '- ',
-    '',
-    '### Related Theory',
-    '- ',
-    '',
-    '### Key Terms',
-    '- ',
-    '',
-    '',
-    '## Issues',
-    '',
-    '### Tensions/Contradictions',
-    '- ',
-    '',
-    '### Unresolved Questions',
-    '- ',
-    '',
-    '### Methodological Concerns',
-    '- ',
-    '',
-    '',
-    '## Gaps',
-    '',
-    '### Knowledge Gaps',
-    '- ',
-    '',
-    '### Empirical Gaps',
-    '- ',
-    '',
-    '### Theoretical Gaps',
-    '- ',
-    '',
-    '',
-    '## Cross-References',
-    '',
-    '### Related Papers',
-    '- ',
-    '',
-    '### Future Research Directions',
-    '- ',
-    '',
-    '',
-    '## Obsidian Link Suggestions',
-    '',
-    '<!--',
-    '審讀論文後，再把真正穩定、可重複使用的概念改成 Obsidian 連結。',
-    '例如：',
-    '- [[Digital Competence]]',
-    '- [[Dynamic Capabilities]]',
-    '- [[Internationalization]]',
-    '',
-    '請避免保留 [[Concept Name]]、[[Theory Name]]、[[Gap Topic]] 這種模板假連結。',
-    '-->'
-];
+        // 注：在 Concepts、Issues、Gaps、Related Papers 部分使用 [[]] 空占位符
+        // 这样用户填入内容后，Obsidian 会自动在图谱中识别和显示关联
+        const sections = [
+            '## My Notes',
+            '',
+            '',
+            '----',
+            '',
+            '## AI Summary',
+            '',
+            '',
+            '## Research Question',
+            '',
+            '### Main RQ',
+            '- ',
+            '',
+            '### Sub-questions',
+            '- ',
+            '',
+            '',
+            '## Method',
+            '',
+            '### Research Design',
+            '- ',
+            '',
+            '### Sample/Data',
+            '- ',
+            '',
+            '### Analysis Approach',
+            '- ',
+            '',
+            '',
+            '## Key Findings',
+            '',
+            '### Finding 1',
+            '- ',
+            '',
+            '### Finding 2',
+            '- ',
+            '',
+            '',
+            '## Limitations',
+            '',
+            '### Methodological',
+            '- ',
+            '',
+            '### Contextual',
+            '- ',
+            '',
+            '',
+            '## Concepts',
+            '',
+            '### Core Concepts',
+            '- [[]]',
+            '',
+            '### Related Theory',
+            '- [[]]',
+            '',
+            '### Key Terms',
+            '- ',
+            '',
+            '',
+            '## Issues',
+            '',
+            '### Tensions/Contradictions',
+            '- [[]]',
+            '',
+            '### Unresolved Questions',
+            '- [[]]',
+            '',
+            '### Methodological Concerns',
+            '- ',
+            '',
+            '',
+            '## Gaps',
+            '',
+            '### Knowledge Gaps',
+            '- [[]]',
+            '',
+            '### Empirical Gaps',
+            '- ',
+            '',
+            '### Theoretical Gaps',
+            '- [[]]',
+            '',
+            '',
+            '## Cross-References',
+            '',
+            '### Related Papers',
+            '- [[]]',
+            '',
+            '### Future Research Directions',
+            '- '
+        ];
 
         const markdown = `---\n${frontmatter}\n---\n\n${sections.join('\n')}`;
         
